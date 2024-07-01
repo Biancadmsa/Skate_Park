@@ -316,5 +316,5 @@ app.post("/edit", async (req, res) => {
 
 // Inicio del servidor
 app.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`Serc¿vidor corriendo en http://localhost:${port}`);
 });

@@ -23,8 +23,8 @@ Este es un sistema de registro de participantes para un skatepark. Los participa
 1. Clonar el repositorio:
 
     ```bash
-    git clone https://github.com/tu-usuario/skate-park-registration.git
-    cd skate-park-registration
+    git clone https://github.com/Biancadmsa/Skate_Park.git
+    cd Skate_Park
     ```
 
 2. Instalar las dependencias:
