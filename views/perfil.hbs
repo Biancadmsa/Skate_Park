@@ -15,9 +15,11 @@
       <p>Especialidad: {{skaters.especialidad}}</p>
       <p>Años de Experiencia: {{skaters.anos_experiencia}}</p>
     </section>
-    <form action="/edit" method="GET">
-      <button type="submit">Modificar Perfil</button>
-    </form>
-    <a href="/logout">Cerrar Sesión</a>
+    <div class="actions">
+      <form action="/edit" method="GET">
+        <button type="submit" class="btn-large btn-green">Modificar Perfil</button>
+      </form>
+      <a href="/logout" class="btn-large btn-red">Cerrar Sesión</a>
+    </div>
   </body>
 </html>

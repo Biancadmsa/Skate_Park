@@ -52,10 +52,20 @@
                     alt="foto"
                     width="50"
                   /></td>
-                <td>{{this.nombre}}</td>
+                <td>{{uppercase this.nombre}}</td>
                 <td>{{this.anos_experiencia}}</td>
-                <td>{{this.especialidad}}</td>
-                <td>{{#if this.estado}}Aprobado{{else}}Pendiente{{/if}}</td>
+                <td>{{uppercase this.especialidad}}</td>
+               <td>
+                  {{#if (eq this.estado 'revision')}}
+                    <p style="color: #FFC107;">En revisión!!</p>
+                  {{else}}
+                    {{#if (eq this.estado 'aprobado')}}
+                      <p style="color: #34C759;">{{this.estado}}</p>
+                    {{else}}
+                      <p>{{this.estado}}</p>
+                    {{/if}}
+                  {{/if}}
+                </td>
               </tr>
             {{/each}}
           </tbody>

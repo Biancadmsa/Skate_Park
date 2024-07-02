@@ -8,24 +8,27 @@ const cookieParser = require("cookie-parser");
 const fs = require("fs");
 const { v4: uuidv4 } = require("uuid");
 const db = require("./db/db");
+const helpers = require("handlebars-helpers")();
+require('dotenv').config(); // Cargar variables de entorno
+
 const app = express();
 
 // Configuración del puerto
 const port = process.env.PORT || 3000;
 const uploadsDir = path.join(__dirname, "public", "uploads");
 
-// Crea el directorio 'uploads' en la carpeta public si no existe
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir);
 }
 
-// Configuración de Handlebars sin layout por defecto
+// Configuración de Handlebars
 app.engine(
   "hbs",
   exphbs.engine({
     extname: "hbs",
-    defaultLayout: false, // No utilizar un layout por defecto
-    layoutsDir: __dirname + "/views/",
+    defaultLayout: false,
+    layoutsDir: path.join(__dirname, "views"),
+    helpers: helpers,
   })
 );
 app.set("view engine", "hbs");
@@ -36,15 +39,30 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(fileUpload());
 app.use(express.static("public"));
+app.use("/static", express.static(path.join(__dirname, "src")));
+app.use("/src/css", express.static(path.join(__dirname, "src", "css")));
 
-// Ruta para servir archivos estáticos
-app.use("/static", express.static(__dirname + "/src"));
+// Middleware para verificar token
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.status(401).send("Acceso denegado. No se proporcionó token.");
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.SECRET_KEY);
+    req.user = decoded;
+    next();
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error de autenticación");
+  }
+};
 
 // Rutas y lógica de tu aplicación
 app.get("/", async (req, res) => {
   try {
     const result = await db.query(
-      "SELECT * FROM skaters WHERE is_admin = FALSE AND email != 'admin@skatepark.com'"
+      "SELECT * FROM skaters WHERE is_admin = FALSE AND email!= 'admin@skatepark.com'"
     );
     res.render("home", { skaters: result.rows });
   } catch (error) {
@@ -61,7 +79,6 @@ app.get("/registrar", (req, res) => {
   res.render("register");
 });
 
-// Ruta para registrar un usuario
 app.post("/register", async (req, res) => {
   const {
     nombre,
@@ -72,9 +89,9 @@ app.post("/register", async (req, res) => {
     anos_experiencia,
   } = req.body;
 
-  const foto = req.files ? req.files.foto : null; // Accede al archivo subido
+  const foto = req.files? req.files.foto : null;
 
-  if (password !== repeatPassword) {
+  if (password!== repeatPassword) {
     return res.status(400).send("Las contraseñas no coinciden");
   }
 
@@ -83,20 +100,17 @@ app.post("/register", async (req, res) => {
       return res.status(400).send("Debe subir una foto");
     }
 
-    // Guardar la imagen en algún lugar accesible
     const fileName = Date.now() + "-" + foto.name;
     foto.mv(path.join(uploadsDir, fileName));
 
     const result = await db.query(
-      "INSERT INTO skaters (nombre, email, password, especialidad, anos_experiencia, foto) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *",
-      [nombre, email, password, especialidad, anos_experiencia, fileName]
+      "INSERT INTO skaters (nombre, email, password, especialidad, anos_experiencia, foto, estado) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *",
+         [nombre, email, password, especialidad, anos_experiencia, fileName, 'revision']
     );
 
-    // Crear y firmar el token JWT
-    const token = jwt.sign({ id: result.rows[0].id }, "secretKey");
+    const token = jwt.sign({ id: result.rows[0].id }, process.env.SECRET_KEY);
     res.cookie("token", token);
 
-    // Renderizar la vista de éxito
     res.render("success");
   } catch (error) {
     console.error(error);
@@ -104,7 +118,6 @@ app.post("/register", async (req, res) => {
   }
 });
 
-// Ruta para iniciar sesión
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
   try {
@@ -116,14 +129,12 @@ app.post("/login", async (req, res) => {
       return res.status(401).send("Credenciales incorrectas");
     }
 
-    // Crear y firmar el token JWT
     const token = jwt.sign(
       { id: result.rows[0].id, email: result.rows[0].email },
-      "secretKey"
+      process.env.SECRET_KEY
     );
     res.cookie("token", token);
 
-    // Verificar si el usuario es administrador
     if (email === "admin@skatepark.com") {
       res.redirect("/admin");
     } else {
@@ -135,20 +146,12 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Ruta para cargar la vista de administrador
-app.get("/admin", async (req, res) => {
-  const token = req.cookies.token;
-  if (!token)
-    return res.status(401).send("Acceso denegado. No se proporcionó token.");
+app.get("/admin", verifyToken, async (req, res) => {
+  if (req.user.email !== "admin@skatepark.com") {
+    return res.status(403).send("Acceso denegado. No eres administrador.");
+  }
 
   try {
-    const decoded = jwt.verify(token, "secretKey");
-
-    // Verificar si el usuario es administrador
-    if (decoded.email !== "admin@skatepark.com") {
-      return res.status(403).send("Acceso denegado. No eres administrador.");
-    }
-
     const result = await db.query(
       "SELECT * FROM skaters WHERE email != 'admin@skatepark.com' AND is_admin = FALSE"
     );
@@ -159,23 +162,13 @@ app.get("/admin", async (req, res) => {
   }
 });
 
-// Ruta para aprobar un participante
-app.get("/approve/:id", async (req, res) => {
-  const token = req.cookies.token;
-  if (!token)
-    return res.status(401).send("Acceso denegado. No se proporcionó token.");
+app.get("/approve/:id", verifyToken, async (req, res) => {
+  if (req.user.email !== "admin@skatepark.com") {
+    return res.status(403).send("Acceso denegado. No eres administrador.");
+  }
 
   try {
-    const decoded = jwt.verify(token, "secretKey");
-
-    // Verificar si el usuario es administrador
-    if (decoded.email !== "admin@skatepark.com") {
-      return res.status(403).send("Acceso denegado. No eres administrador.");
-    }
-
-    await db.query("UPDATE skaters SET estado = 'aprobado' WHERE id = $1", [
-      req.params.id,
-    ]);
+    await db.query("UPDATE skaters SET estado = 'aprobado' WHERE id = $1", [req.params.id]);
     res.redirect("/admin");
   } catch (error) {
     console.error(error);
@@ -183,138 +176,104 @@ app.get("/approve/:id", async (req, res) => {
   }
 });
 
-// Ruta para redirigir a la eliminación de un usuario
-app.get("/delete/:id", (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).send("Acceso denegado. No se proporcionó token.");
+app.get("/delete/:id", verifyToken, (req, res) => {
+  if (req.user.email !== "admin@skatepark.com") {
+    return res.status(403).send("Acceso denegado. No eres administrador.");
   }
 
-  try {
-    const decoded = jwt.verify(token, "secretKey");
-
-    // Verificar si el usuario es administrador
-    if (decoded.email !== "admin@skatepark.com") {
-      return res.status(403).send("Acceso denegado. No eres administrador.");
-    }
-
-    res.render("delete-confirm", { id: req.params.id });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error al redirigir a la eliminación");
-  }
+  res.render("delete-confirm", { id: req.params.id });
 });
-
-// Ruta para eliminar un usuario
-app.post("/delete/:id", async (req, res) => {
-  const userId = req.params.id;
-  const token = req.cookies.token;
-
-  if (!token) {
-    return res.status(401).send("Acceso denegado. No se proporcionó token.");
+app.post("/delete/:id", verifyToken, async (req, res) => {
+  if (req.user.email!== "admin@skatepark.com") {
+    return res.status(403).send("Acceso denegado. No eres administrador.");
   }
 
   try {
-    const decoded = jwt.verify(token, "secretKey");
-
-    // Verificar si el usuario es administrador
-    if (decoded.email !== "admin@skatepark.com") {
-      return res.status(403).send("Acceso denegado. No eres administrador.");
-    }
-
-    // Eliminar el usuario
-    await db.query("DELETE FROM skaters WHERE id = $1", [userId]);
-
-    // Ajustar la secuencia del ID
-    await db.query(`
-      SELECT setval(pg_get_serial_sequence('skaters', 'id'), coalesce(max(id), 1), false) FROM skaters
-    `);
-
-    res.redirect("/admin");
+    await db.query("DELETE FROM skaters WHERE id = $1", [req.params.id]);
+    await db.query(
+      "SELECT setval(pg_get_serial_sequence('skaters', 'id'), coalesce(max(id), 1), false) FROM skaters"
+    );
+    res.redirect("/admin"); // Redirigir a la página /admin
   } catch (error) {
     console.error(error);
     res.status(500).send("Error al eliminar usuario");
   }
 });
 
-// Ruta para mostrar el perfil del usuario
-app.get("/perfil", async (req, res) => {
-  try {
-    const token = req.cookies.token;
-
-    // Verificar y decodificar el token JWT
-    const decoded = jwt.verify(token, "secretKey");
-
-    // Obtener información del usuario desde la base de datos
-    const result = await db.query(
-      "SELECT nombre, email, especialidad, anos_experiencia, foto FROM skaters WHERE id = $1",
-      [decoded.id]
-    );
-
-    // Verificar si el usuario fue encontrado
-    if (result.rows.length === 0) {
-      return res.status(404).send("Usuario no encontrado");
-    }
-
-    // Renderizar la plantilla perfil.hbs con los datos del usuario
-    res.render("perfil", { skaters: result.rows[0] });
-  } catch (error) {
-    console.error(error);
-    res.status(500).send("Error al cargar perfil");
-  }
-});
-
-// Ruta para cerrar sesión
 app.get("/logout", (req, res) => {
   res.clearCookie("token");
   res.redirect("/");
 });
 
-// Ruta para modificar perfil
-app.get("/edit", async (req, res) => {
+app.get("/perfil", verifyToken, async (req, res) => {
   try {
-    const token = req.cookies.token;
-    if (!token) {
-      return res.status(401).send("Acceso denegado. No se proporcionó token.");
+    const result = await db.query(
+      "SELECT nombre, email, especialidad, anos_experiencia, foto FROM skaters WHERE id = $1",
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).send("Usuario no encontrado");
     }
 
-    const decoded = jwt.verify(token, "secretKey");
-    const result = await db.query("SELECT * FROM skaters WHERE id = $1", [
-      decoded.id,
-    ]);
+    res.render("perfil", { skaters: result.rows[0] });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Error al mostrar el perfil del usuario");
+  }
+});
+
+app.get("/edit", verifyToken, async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT nombre, email, especialidad, anos_experiencia, foto FROM skaters WHERE id = $1",
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).send("Usuario no encontrado");
+    }
 
     res.render("edit", { skaters: result.rows[0] });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error al cargar el perfil para editar");
+    res.status(500).send("Error al mostrar la vista de edición");
   }
 });
 
-// Ruta para actualizar perfil
+app.post("/edit", verifyToken, async (req, res) => {
+  const {
+    nombre,
+    especialidad,
+    anos_experiencia,
+  } = req.body;
 
-app.post("/edit", async (req, res) => {
-  const token = req.cookies.token;
-  if (!token) {
-    return res.status(401).send("Acceso denegado. No se proporcionó token.");
-  }
+  const foto = req.files? req.files.foto : null;
 
   try {
-    const decoded = jwt.verify(token, "secretKey");
-    const { nombre, password, especialidad, anos_experiencia } = req.body;
+    const userEmail = req.user.email; // Get the user's email from the request
 
-    await db.query(
-      "UPDATE skaters SET nombre = $1, password = $2, especialidad = $3, anos_experiencia = $4 WHERE id = $5",
-      [nombre, password, especialidad, anos_experiencia, decoded.id]
-    );
+    if (foto) {
+      const fileName = Date.now() + "-" + foto.name;
+      foto.mv(path.join(uploadsDir, fileName));
 
-    res.redirect("/perfil");
+      await db.query(
+        "UPDATE skaters SET nombre = $1, email = $2, especialidad = $3, anos_experiencia = $4, foto = $5 WHERE id = $6",
+        [nombre, userEmail, especialidad, anos_experiencia, fileName, req.user.id]
+      );
+    } else {
+      await db.query(
+        "UPDATE skaters SET nombre = $1, email = $2, especialidad = $3, anos_experiencia = $4 WHERE id = $5",
+        [nombre, userEmail, especialidad, anos_experiencia, req.user.id]
+      );
+    }
+
+    res.redirect("/");
   } catch (error) {
     console.error(error);
-    res.status(500).send("Error al modificar perfil");
+    res.status(500).send("Error al actualizar usuario");
   }
 });
-
-// Inicio del servidor
 app.listen(port, () => {
-  console.log(`Serc¿vidor corriendo en http://localhost:${port}`);
+  console.log(`Servidor corriendo en http://localhost:${port}`);
 });

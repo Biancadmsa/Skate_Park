@@ -8,6 +8,11 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="static/css/registrar.css" />
+    <style>
+      input, select, textarea {
+        text-transform: uppercase;
+      }
+    </style>
   </head>
   <body>
     <div class="container-fluid">
@@ -22,8 +27,7 @@
           class="form-signin"
         >
           <div class="form-group row">
-            <label for="email" class="col-sm-4 col-form-label">Correo
-              Electrónico:</label>
+            <label for="email" class="col-sm-4 col-form-label">Correo Electrónico:</label>
             <div class="col-sm-8">
               <input
                 type="email"
@@ -31,6 +35,7 @@
                 id="email"
                 name="email"
                 required
+                style="text-transform: uppercase;"
               />
             </div>
           </div>
@@ -43,14 +48,12 @@
                 id="nombre"
                 name="nombre"
                 required
+                style="text-transform: uppercase;"
               />
             </div>
           </div>
           <div class="form-group row">
-            <label
-              for="password"
-              class="col-sm-4 col-form-label"
-            >Contraseña:</label>
+            <label for="password" class="col-sm-4 col-form-label">Contraseña:</label>
             <div class="col-sm-8">
               <input
                 type="password"
@@ -62,8 +65,7 @@
             </div>
           </div>
           <div class="form-group row">
-            <label for="repeatPassword" class="col-sm-4 col-form-label">Repetir
-              Contraseña:</label>
+            <label for="repeatPassword" class="col-sm-4 col-form-label">Repetir Contraseña:</label>
             <div class="col-sm-8">
               <input
                 type="password"
@@ -75,8 +77,7 @@
             </div>
           </div>
           <div class="form-group row">
-            <label for="anos_experiencia" class="col-sm-4 col-form-label">Años
-              de Experiencia:</label>
+            <label for="anos_experiencia" class="col-sm-4 col-form-label">Años de Experiencia:</label>
             <div class="col-sm-8">
               <input
                 type="number"
@@ -84,14 +85,12 @@
                 id="anos_experiencia"
                 name="anos_experiencia"
                 required
+                style="text-transform: uppercase;"
               />
             </div>
           </div>
           <div class="form-group row">
-            <label
-              for="especialidad"
-              class="col-sm-4 col-form-label"
-            >Especialidad:</label>
+            <label for="especialidad" class="col-sm-4 col-form-label">Especialidad:</label>
             <div class="col-sm-8">
               <input
                 type="text"
@@ -99,6 +98,7 @@
                 id="especialidad"
                 name="especialidad"
                 required
+                style="text-transform: uppercase;"
               />
             </div>
           </div>
@@ -118,8 +118,7 @@
             <div class="col-sm-12">
               <button type="submit" class="btn btn-primary">Registrarse</button>
             </div>
-            <p>Si ya tienes cuenta, puedes
-              <a href="/login">Iniciar Sesion</a></p>
+            <p>Si ya tienes cuenta, puedes <a href="/login">Iniciar Sesion</a></p>
           </div>
         </form>
         <button><a href="/">Volver</a></button>

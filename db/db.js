@@ -1,5 +1,9 @@
-//conexion base de datos
+//conexion base de datos db.js
 const { Pool } = require("pg");
+
+const SECRET = process.env.SECRET;
+
+
 //config dotenv
 require("dotenv").config();
 const pool = new Pool({

@@ -1,4 +1,5 @@
 -- Active: 1713566143574@@127.0.0.1@5432@skatepark
+
 CREATE DATABASE skatepark;
 
 CREATE TABLE skaters (
@@ -14,3 +15,7 @@ CREATE TABLE skaters (
 );
 
 SELECT * FROM skaters;
+
+INSERT INTO skaters (email, nombre, password, anos_experiencia, especialidad, foto, is_admin)
+VALUES ('admin@skatepark.com', 'Piero Administrador', 'admin123', 5, 'Jefe Administrativo', 'admin.jpg', TRUE);
+

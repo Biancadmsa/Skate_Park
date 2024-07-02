@@ -35,10 +35,11 @@ Este es un sistema de registro de participantes para un skatepark. Los participa
 
 3. Configurar la base de datos:
 
+```sql
     - Crear una base de datos en PostgreSQL.
     - Crear las tablas necesarias ejecutando los siguientes comandos SQL:
 
-      ```sql
+     
       CREATE TABLE skaters (
           id SERIAL PRIMARY KEY,
           email VARCHAR(255) UNIQUE NOT NULL,
@@ -50,25 +51,41 @@ Este es un sistema de registro de participantes para un skatepark. Los participa
           estado VARCHAR(255) DEFAULT 'revisión',
           is_admin BOOLEAN DEFAULT FALSE
       );
-      ```
 
-4. Crear un archivo `.env` en la raíz del proyecto con el siguiente contenido:
+      INSERT INTO skaters (email, nombre, password, anos_experiencia, especialidad, foto, is_admin)VALUES ('admin@skatepark.com', 'Piero Administrador', 'admin123', 5, 'Jefe Administrativo', 'admin.jpg', TRUE);
+ ```
 
-    ```plaintext
-    PORT=3000
-    DATABASE_URL=postgresql://usuario:password@localhost:5432/nombre_de_tu_base_de_datos
-    SECRET_KEY=secretKey
-    ```
+4. Crear un archivo  `.env` en la raíz del proyecto con el siguiente contenido:
 
+  ```
+DB_USER= (tu usuario de pg)
+DB_HOST= 127.0.0.1
+DB_DATABASE=skatepark
+DB_PASSWORD=postgres(la clave de tu pg)
+DB_PORT=5432 (tu puerto de pg)
+SECRET= 1C3Chile365/$_
+```
+   
 ### Ejecución
 
 1. Iniciar el servidor:
 
-    ```bash
-    npm start
-    ```
+```bash
+npm start
+```
 
-2. Abrir un navegador y navegar a `http://localhost:3000` para ver la aplicación en funcionamiento.
+2. Abrir un navegador y navegar a:
+ ```
+ `http://localhost:3000`, 
+  para ver la aplicación en funcionamiento.
+
+ ```
+
+3. Email y clave del administrador, fueron agregados con un into, anteriormente indicados.
+```
+email: admin@skatepark
+clave: admin123
+```
 
 ## Rutas Principales
 
