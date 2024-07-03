@@ -63,7 +63,8 @@ DB_HOST= 127.0.0.1
 DB_DATABASE=skatepark
 DB_PASSWORD=postgres(la clave de tu pg)
 DB_PORT=5432 (tu puerto de pg)
-SECRET= 1C3Chile365/$_
+SECRET_KEY=secretKey
+
 ```
    
 ### Ejecución
@@ -81,7 +82,7 @@ npm start
 
  ```
 
-3. Email y clave del administrador, fueron agregados con un into, anteriormente indicados.
+3. Email y clave del administrador, fueron agregados con un insert, anteriormente indicados.
 ```
 email: admin@skatepark
 clave: admin123
