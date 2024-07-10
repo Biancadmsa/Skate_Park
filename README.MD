@@ -24,7 +24,7 @@ Este es un sistema de registro de participantes para un skatepark. Los participa
 
     ```bash
     git clone https://github.com/Biancadmsa/Skate_Park.git
-    cd Skate_Park
+    
     ```
 
 2. Instalar las dependencias:
@@ -57,7 +57,7 @@ Este es un sistema de registro de participantes para un skatepark. Los participa
 
 4. Crear un archivo  `.env` en la raíz del proyecto con el siguiente contenido:
 
-  ```
+  ```sql
 DB_USER= (tu usuario de pg)
 DB_HOST= 127.0.0.1
 DB_DATABASE=skatepark
